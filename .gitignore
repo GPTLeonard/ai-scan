@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env
+
+# Azure Functions
+api/local.settings.json
+.funcignore
+api/__pycache__
+
+# Node/Frontend
+node_modules/
+client/node_modules/
+dist/
+build/
+.DS_Store
+
+# Editor
+.vscode/
+.idea/

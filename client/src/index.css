@@ -1,0 +1,86 @@
+:root {
+  --color-symbis-dark: #243305;
+  --color-symbis-accent: #94A807;
+  --color-symbis-yellow: #FFEB39;
+  --color-bg: #F5F7F0;
+  --color-white: #FFFFFF;
+  --color-text-dark: #243305;
+  --radius: 12px;
+  --shadow-card: 0 4px 12px rgba(36, 51, 5, 0.08);
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text-dark);
+}
+
+h1, h2, h3, h4, h5 {
+  margin: 0;
+  color: var(--color-symbis-dark);
+}
+
+/* Utilities */
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.btn-primary {
+  background-color: var(--color-symbis-yellow);
+  color: var(--color-symbis-dark);
+  border: none;
+  font-weight: 700;
+  padding: 0.8rem 1.6rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 1rem;
+  transition: transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.card {
+  background: var(--color-white);
+  border-radius: var(--radius);
+  padding: 2rem;
+  box-shadow: var(--shadow-card);
+}
+
+/* Animations included via Framer Motion but good to have helper classes */
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Input Styles */
+input, select {
+  width: 100%;
+  padding: 0.8rem;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+input:focus, select:focus {
+  outline: 2px solid var(--color-symbis-accent);
+  border-color: transparent;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  font-size: 0.9rem;
+}
