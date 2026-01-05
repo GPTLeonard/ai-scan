@@ -1,5 +1,3 @@
 azure-functions
-openai
-beautifulsoup4
 requests
 reportlab
