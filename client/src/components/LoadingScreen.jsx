@@ -3,11 +3,12 @@ import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 
 const messages = [
-    "Website scannen...",
-    "Bedrijfsactiviteiten analyseren...",
-    "Symbis Praatplaat model toepassen...",
-    "Security & Privacy checks uitvoeren...",
-    "Rapport opmaken in huisstijl..."
+    "Website en bedrijfsprofiel scannen...",
+    "Deep-dive web search naar nieuws & concurrenten...",
+    "Analyseren van branche-specifieke trends...",
+    "Symbis Praatplaat & architectuur toepassen...",
+    "Automatiseringskansen identificeren...",
+    "Strategisch rapport genereren..."
 ];
 
 export default function LoadingScreen() {
@@ -42,7 +43,7 @@ export default function LoadingScreen() {
             </motion.h3>
 
             <p style={{ marginTop: '1rem', color: '#888', fontSize: '0.9rem' }}>
-                Dit duurt ongeveer 30 seconden...
+                Dit duurt 2 tot 5 minuten (we doen grondig onderzoek)...
             </p>
         </div>
     );

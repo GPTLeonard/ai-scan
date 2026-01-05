@@ -13,25 +13,36 @@ N8N_WEBHOOK_URL = "https://n8n.stratuss.cloud/webhook/ai-scanv2"
 
 def parse_n8n_response(response_data):
     """
-    Robustly parses n8n response which might be:
-    1. A direct JSON object (dict).
-    2. A list containing an object with an 'output' key (which is a JSON string).
+    Robustly parses n8n response:
+    1. Arrays -> take first item
+    2. Objects with 'output' string -> parse inner JSON
+    3. Handles potential double nesting
     """
-    if isinstance(response_data, list) and len(response_data) > 0:
-        # Check if it's the specific n8n array format
-        item = response_data[0]
-        if isinstance(item, dict) and 'output' in item:
+    if isinstance(response_data, list):
+        if len(response_data) == 0:
+            return {}
+        response_data = response_data[0] # Take first item
+    
+    # Check if this item is a dict and has 'output' key
+    if isinstance(response_data, dict):
+        if 'output' in response_data:
             try:
                 # The 'output' field contains the actual JSON string we need
-                return json.loads(item['output'])
+                inner_data = json.loads(response_data['output'])
+                return inner_data
             except json.JSONDecodeError as e:
                 logging.error(f"Failed to parse inner JSON string from n8n: {e}")
-                raise ValueError("Inner JSON string in n8n response is invalid")
-        else:
-            # Maybe it's just a list of results? Return as is if it looks like data
-            return item
+                # Fallback: maybe it's not a JSON string but just a string?
+                # But our prompt says JSON output. we raise to be safe.
+                # Or return as is? No, PDF expects dict.
+                # raising error to trigger mock/error handling
+                raise ValueError("Inner JSON string in 'output' is invalid")
+
+        # If no 'output' key, assuming the dict itself IS the data
+        # BUT... in your log it showed Data Keys: ['output']. 
+        # So we really need to unwrap that output.
+        return response_data
     
-    # If it's already a dict, assume it's the direct data
     return response_data
 
 @app.route(route="generate-report", auth_level=func.AuthLevel.ANONYMOUS)
@@ -85,7 +96,8 @@ def generate_report(req: func.HttpRequest) -> func.HttpResponse:
     try:
         pdf_bytes = pdf_generator.generate_pdf(analysis_data, company_name or "Organisatie")
     except Exception as e:
-        logging.error(f"Error generating PDF: {e}")
+        import traceback
+        logging.error(f"Error generating PDF: {traceback.format_exc()}")
         return func.HttpResponse(f"Error generating PDF: {str(e)}", status_code=500)
 
     # 4. Return PDF

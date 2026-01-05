@@ -4,35 +4,48 @@ from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from io import BytesIO
 import json
+import requests
 
-# Add api folder to path to import our modules
+# Add api folder to path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'api'))
 
-# Load local settings manually FIRST
-try:
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    settings_path = os.path.join(base_dir, 'api', 'local.settings.json')
-    sys.stderr.write(f"DEBUG: Attempting to load settings from: {settings_path}\n")
-    
-    if os.path.exists(settings_path):
-        with open(settings_path, 'r') as f:
-            settings = json.load(f)
-            values = settings.get('Values', {})
-            sys.stderr.write(f"DEBUG: Found {len(values)} settings keys: {list(values.keys())}\n")
-            for key, value in values.items():
-                os.environ[key] = value
-        sys.stderr.write("DEBUG: Successfully loaded settings into os.environ\n")
-    else:
-        sys.stderr.write(f"DEBUG: Settings file NOT FOUND at {settings_path}\n")
-except Exception as e:
-    sys.stderr.write(f"DEBUG: Error loading settings: {e}\n")
-
-import scraper
-import ai_analyzer
+# Still import pdf_generator because we do that locally
 import pdf_generator
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for local dev
+CORS(app)
+
+# NOTE: For local dev, we now mirror the production logic and call the n8n webhook
+N8N_WEBHOOK_URL = "https://n8n.stratuss.cloud/webhook/ai-scanv2"
+
+def parse_n8n_response(response_data):
+    """
+    Robustly parses n8n response:
+    1. Arrays -> take first item
+    2. Objects with 'output' string -> parse inner JSON
+    """
+    if isinstance(response_data, list):
+        if len(response_data) == 0:
+            return {}
+        response_data = response_data[0] # Take first item
+    
+    # Check if this item is a dict and has 'output' key
+    if isinstance(response_data, dict):
+        if 'output' in response_data:
+            try:
+                # The 'output' field contains the actual JSON string we need
+                inner_data = json.loads(response_data['output'])
+                return inner_data
+            except json.JSONDecodeError as e:
+                print(f"Failed to parse inner JSON string from n8n: {e}")
+                # Try to use it as is if it fails? No, it's a string.
+                raise ValueError("Inner JSON string in 'output' is invalid")
+        
+        # If we are here, it's a dict but has no output key.
+        # Maybe it IS the data?
+        return response_data
+    
+    return response_data
 
 @app.route('/api/generate-report', methods=['POST'])
 def generate_report():
@@ -45,22 +58,44 @@ def generate_report():
     if not url:
         return jsonify({"error": "Please pass a URL"}), 400
 
-    print(f"Scraping {url}...")
-    site_text = scraper.scrape_website(url)
-
-    print("Analyzing with AI...")
-    company_info = {
+    print(f"Calling n8n Webhook for analysis: {N8N_WEBHOOK_URL}")
+    
+    # 1. Prepare Payload for n8n
+    payload = {
+        "url": url,
         "company_name": company_name,
         "industry": data.get('industry', 'Onbekend'),
         "employees": data.get('employees', 'Onbekend'),
         "ai_experience": data.get('ai_experience', 'Onbekend'),
-        "chatgpt_policy": data.get('chatgpt_policy', 'Onbekend')
+        "chatgpt_policy": data.get('chatgpt_policy', 'Onbekend'),
+        "use_case_text": data.get('use_case_text', '') 
     }
-    
-    analysis_data = ai_analyzer.get_ai_analysis(company_info, site_text)
+
+    try:
+        # 2. Call n8n (long timeout)
+        response = requests.post(N8N_WEBHOOK_URL, json=payload, timeout=300)
+        response.raise_for_status()
+        raw_data = response.json()
+        
+        # Robust Parsing
+        analysis_data = parse_n8n_response(raw_data)
+        
+        print("Received and parsed analysis from n8n!")
+        # Debug: print keys to verify unpacking
+        print(f"Data Keys: {list(analysis_data.keys()) if isinstance(analysis_data, dict) else 'Not a dict'}")
+        
+    except Exception as e:
+        print(f"Error calling n8n: {e}")
+        return jsonify({"error": str(e)}), 502
 
     print("Generating PDF...")
-    pdf_bytes = pdf_generator.generate_pdf(analysis_data, company_name or "Organisatie")
+    try:
+        pdf_bytes = pdf_generator.generate_pdf(analysis_data, company_name or "Organisatie")
+    except Exception as e:
+        print(f"PDF Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"PDF Gen failed: {e}"}), 500
 
     return send_file(
         BytesIO(pdf_bytes),
@@ -71,4 +106,5 @@ def generate_report():
 
 if __name__ == '__main__':
     print("Starting local Symbis Server on port 7071...")
+    print("MODE: n8n Webhook Integration")
     app.run(port=7071)
