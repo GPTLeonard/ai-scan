@@ -9,7 +9,6 @@ env/
 
 # Azure Functions
 api/local.settings.json
-.funcignore
 api/__pycache__
 
 # Node/Frontend
