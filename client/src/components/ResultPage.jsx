@@ -1,19 +1,8 @@
 import React from 'react';
-import { CheckCircle, Download } from 'lucide-react';
+import { CheckCircle, Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export default function ResultPage({ pdfBlob, companyName }) {
-
-    const handleDownload = () => {
-        if (!pdfBlob) return;
-        const url = window.URL.createObjectURL(pdfBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `Symbis_Scan_${companyName}.pdf`);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-    };
+export default function ResultPage({ companyName, email, message }) {
 
     return (
         <motion.div
@@ -26,18 +15,20 @@ export default function ResultPage({ pdfBlob, companyName }) {
                 <CheckCircle size={80} />
             </div>
 
-            <h2 style={{ marginBottom: '1rem' }}>Klaar!</h2>
+            <h2 style={{ marginBottom: '1rem' }}>Bedankt!</h2>
             <p style={{ fontSize: '1.1rem', color: '#666', marginBottom: '2rem' }}>
-                De AI-scan voor <b>{companyName}</b> is gereed.
+                {message || <>We verwerken de AI-scan voor <b>{companyName}</b>.</>}
             </p>
 
-            <button onClick={handleDownload} className="btn-primary" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', margin: '0 auto', fontSize: '1.1rem', padding: '1rem 2rem' }}>
-                <Download size={24} />
-                Download PDF Rapport
-            </button>
-
             <p style={{ marginTop: '2rem', fontSize: '0.9rem', color: '#999' }}>
-                Er is ook een kopie verstuurd naar je email.
+                {email ? (
+                    <>
+                        <Mail size={16} style={{ marginRight: '6px', verticalAlign: 'text-bottom' }} />
+                        We sturen het rapport naar <b>{email}</b>.
+                    </>
+                ) : (
+                    <>Het rapport wordt binnen enkele minuten gemaild.</>
+                )}
             </p>
         </motion.div>
     );

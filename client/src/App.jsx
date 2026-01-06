@@ -5,13 +5,15 @@ import ResultPage from './components/ResultPage';
 
 function App() {
   const [view, setView] = useState('form'); // form, loading, result
-  const [pdfBlob, setPdfBlob] = useState(null);
   const [companyName, setCompanyName] = useState('');
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
   const [error, setError] = useState(null);
 
   const handleSubmit = async (data) => {
     setView('loading');
     setCompanyName(data.company_name);
+    setEmail(data.email || '');
     setError(null);
 
     try {
@@ -26,11 +28,14 @@ function App() {
       });
 
       if (!response.ok) {
-        throw new Error(`Error: ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(errorText || `Error: ${response.statusText}`);
       }
 
-      const blob = await response.blob();
-      setPdfBlob(blob);
+      const result = await response.json();
+      setMessage(result.message || 'Bedankt! Je rapport wordt binnen enkele minuten gemaild.');
+      setCompanyName(result.company_name || data.company_name);
+      setEmail(result.email || data.email || '');
       setView('result');
 
     } catch (err) {
@@ -50,7 +55,9 @@ function App() {
       <main className="container" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
         {view === 'form' && <WizardForm onSubmit={handleSubmit} />}
         {view === 'loading' && <LoadingScreen />}
-        {view === 'result' && <ResultPage pdfBlob={pdfBlob} companyName={companyName} />}
+        {view === 'result' && (
+          <ResultPage companyName={companyName} email={email} message={message} />
+        )}
 
         {view === 'form' && error && (
           <p style={{ color: 'red', marginTop: '1rem' }}>{error}</p>
