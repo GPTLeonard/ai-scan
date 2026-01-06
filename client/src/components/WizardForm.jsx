@@ -10,6 +10,8 @@ export default function WizardForm({ onSubmit }) {
         industry: 'Zakelijke dienstverlening',
         ai_experience: '3',
         chatgpt_policy: 'Weet ik niet',
+        use_case_preference: '',
+        use_case_text: '',
         email: '',
         name: ''
     });

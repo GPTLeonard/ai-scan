@@ -17,6 +17,19 @@ function App() {
     setError(null);
 
     try {
+      const payload = {
+        company_name: data.company_name ?? '',
+        url: data.url ?? '',
+        employees: data.employees ?? '',
+        industry: data.industry ?? '',
+        ai_experience: data.ai_experience ?? '',
+        chatgpt_policy: data.chatgpt_policy ?? '',
+        use_case_preference: data.use_case_preference ?? '',
+        use_case_text: data.use_case_text ?? '',
+        email: data.email ?? '',
+        name: data.name ?? '',
+      };
+
       // In development, the proxy in vite.config.js will forward /api to localhost:7071
       // In production, Azure Static Web Apps handles this automatically.
       const response = await fetch('/api/generate-report', {
@@ -24,7 +37,7 @@ function App() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
